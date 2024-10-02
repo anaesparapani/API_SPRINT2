@@ -12,15 +12,12 @@ class AppController {
     //Permite que a aplicação receba dados no formato JSON nas requisições
     this.express.use(express.json());
   }
-  routes() { // Define as rotas da API
+  routes() {
+    // Define as rotas da API
     //URL base:
     const api_routes = require("./routes/api_routes");
-    this.express.use("/agen/sala-de-aula/v1", api_routes); //
-    // Define uma rota GET para o caminho /health/
-    this.express.get("/agen/sala-de-aula/v1/health/", (req, res) => {
-      // Verificação de rota se está OK
-      res.send({ status: "OK" }); // Confirmação de que a mensagem está OK
-    });
+    this.express.use("/agen/sala-de-aula/v1", api_routes); 
+    
   }
 }
 //Exporta a instância do Express configurada, tornando-a acessível em outros arquivos
