@@ -1,5 +1,4 @@
-let users = [];
-let id_usuarios = 1;
+const connect = require("../db/connect");
 
 module.exports = class userController {
   static async createUser(req, res) {
@@ -18,28 +17,61 @@ module.exports = class userController {
     } else if (!email.includes("@")) {
       //Verifica se o email tem o @
       return res.status(400).json({ error: "Email inválido. Deve conter @" });
+    } else if (!email.includes("@portaledusenaisp.org.br")) {
+      //Verifica se o email possui o portaledusenai.org.br
+      return res.status(400).json({ error: "Email inválido, não docente" });
+    } else {
+      // Construção da query INSERT
+      const query = `INSERT INTO usuario (cpf, senha, email, nome) VALUES(
+    '${cpf}',
+    '${senha}',
+    '${email}',
+    '${nome}')`;
+      // Executando a query criada
+      try {
+        connect.query(query, function (err) {
+          if (err) {
+            console.log(err);
+            console.log(err.code);
+            if (err.code === "ER_DUP_ENTRY") {
+              return res
+                .status(400)
+                .json({ error: "O Email ja está vinculado a outro usuário" });
+            } else {
+              return res
+                .status(500)
+                .json({ error: "Erro interno do servidor" });
+            }
+          } else {
+            return res
+              .status(201)
+              .json({ message: "Usuário cadastrado com sucesso" });
+          }
+        });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erro interno do servidor" });
+      }
     }
-
-    // Verifica se já existe um usuário com o mesmo CPF
-    const existingUser = users.find((user) => user.cpf === cpf);
-    if (existingUser) {
-      return res.status(400).json({ error: "CPF já cadastrado" });
-    }
-
-    // Cria e adiciona novo usuário
-    const newUser = { id: id_usuarios++, cpf, email, senha, nome };
-    users.push(newUser);
-
-    return res
-      .status(201)
-      .json({ message: "Usuário criado com sucesso", user: newUser }); //201 significa cadastrado
   }
 
+    
   static async getAllUsers(req, res) {
-    //Lista todos os usuarios
-    return res
-      .status(200)
-      .json({ message: "Obtendo todos os usuários", users }); //200 significa sucesso
+    const query = `SELECT * FROM usuario`;
+    try {
+      connect.query(query, function (err, results) {
+        if (err) {
+          console.error(err);
+          return req.status(500).json({ error: "Erro interno do Servidor" });
+        }
+        return res
+          .status(200)
+          .json({ message: "Lista de Usuários", users: results });
+      });
+    } catch (error) {
+      console.error("Erro ao executar consulta:", error);
+      return res.status(500).json({ error: "Erro interno do Servidor" });
+    }
   }
 
   static async updateUser(req, res) {
@@ -47,42 +79,61 @@ module.exports = class userController {
     const { id, cpf, email, senha, nome } = req.body;
 
     // Validar se todos os campos foram preenchidos
-    if (!cpf || !email || !senha || !nome) {
+    if (!id || !cpf || !email || !senha || !nome) {
       return res
         .status(400)
         .json({ error: "Todos os campos devem ser preenchidos" });
     }
-    // Procurar o indice do usuario no Array 'users' pelo id
-    const userIndex = users.findIndex((user) => user.id === id);
+    const query = `UPDATE usuario SET cpf=?, email=?, senha=?, nome=? WHERE id_usuario = ?`;
+    const values = [cpf, email, senha, nome, id];
 
-    // Se o usuário não for encontrado userIndex equivale a -1
-    if (userIndex === -1) {
-      return res.status(400).json({ error: "Usuário não encontrado" });
+    try {
+      connect.query(query, values, function (err, results) {
+        if (err) {
+          if (err.code === "ER_DUP_ENTRY") {
+            return res
+              .status(400)
+              .json({ error: "Email já cadastrado por outro usuário" });
+          } else {
+            console.error(err);
+            res.status(500).json({ error: "Erro interno do Servidor" });
+          }
+        }
+        if (results.affectedRows === 0) {
+          return res.status(404).json({ message: "Usuário não encontrado" });
+        }
+        return res
+          .status(200)
+          .json({ message: "Usuário atualizado com sucesso" });
+      });
+    } catch (error) {
+      console.error("Erro ao executar consulta", error);
+      return res.status(500).json({ error: "Erro interno do Servidor" });
     }
-
-    // Atualiza os dados do usuário do Array 'users'
-    users[userIndex] = { id, cpf, email, senha, nome };
-
-    return res
-      .status(200)
-      .json({ message: "Usuário atualizado", user: users[userIndex] });
   }
 
   static async deleteUser(req, res) {
-    // Obtém o parâmetro 'id' da requisição, que é o id do user a ser deletado
+    // Obtem o parametro 'id' da requisição, que é o cpf do user a ser deletado
     const userId = req.params.id;
+    const query = `DELETE FROM usuario WHERE id_usuario=?`;
+    const values = [userId];
 
-    // Procurar o indice do usuario no Array 'users' pelo id
-    const userIndex = users.findIndex((user) => user.id == userId);
-
-    // Se o usuário não for encontrado userIndex equivale a -1
-    if (userIndex === -1) {
-      return res.status(400).json({ error: "Usuário não encontrado" });
+    try {
+      connect.query(query, values, function (err, results) {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({ error: "Erro interno no servidor" });
+        }
+        if (results.affectedRows === 0) {
+          return res.status(404).json({ error: "Usuário não encontrado" });
+        }
+        return res
+          .status(200)
+          .json({ message: "Usuário excluido com sucesso" });
+      });
+    } catch (error) {
+      console.error(err);
+      return res.status(500).json({ error: "Erro interno do servidor" });
     }
-
-    //Removendo o usuário do Array 'users'
-    users.splice(userIndex, 1);
-
-    return res.status(200).json({ message: "Usuário Apagado" });
   }
 };
