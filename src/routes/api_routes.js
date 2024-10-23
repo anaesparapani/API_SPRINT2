@@ -4,6 +4,7 @@ const router = require("express").Router(); //importando o módulo express
 const userController = require("../controllers/userController")
 
 router.post('/user', userController.createUser);
+router.post('/login', userController.loginUser);
 router.get('/user', userController.getAllUsers);
 router.put('/user/', userController.updateUser);
 router.delete('/user/:id', userController.deleteUser);

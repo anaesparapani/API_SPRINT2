@@ -55,7 +55,41 @@ module.exports = class userController {
     }
   }
 
-    
+  static async loginUser(req, res) {
+    const { senha, email } = req.body;
+
+    if (!senha || !email) {
+      return res
+        .status(400)
+        .json({ error: "Todos os campos devem ser preenchidos" });
+    } else {
+      const query = `SELECT * FROM usuario WHERE email = '${email}'`;
+      try {
+        connect.query(query, function (err, results) {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Erro interno no Servidor" });
+          }
+
+          if (results.length === 0) {
+            return res.status(404).json({ error: "Usuário não entrado" });
+          }
+
+          const usuario = results[0];
+
+          if (usuario.senha === senha) {
+            return res.status(200).json({ message: "Login bem sucedido" });
+          } else {
+            return res.status(401).json({ error: "Senha incorreta" });
+          }
+        });
+      } catch (error) {
+        console.error("Erro ao executar consulta:", error);
+        return res.status(500).json({ error: "Erro interno do Servidor" });
+      }
+    }
+  }
+  //Vai listar todos os usuários cadastrados
   static async getAllUsers(req, res) {
     const query = `SELECT * FROM usuario`;
     try {
@@ -74,6 +108,7 @@ module.exports = class userController {
     }
   }
 
+  //Vai atualizar os dados
   static async updateUser(req, res) {
     // Desestrutura e recupera os dados enviados via corpo da requisição
     const { id, cpf, email, senha, nome } = req.body;
@@ -112,6 +147,7 @@ module.exports = class userController {
     }
   }
 
+  //Vai deletar os usuários
   static async deleteUser(req, res) {
     // Obtem o parametro 'id' da requisição, que é o cpf do user a ser deletado
     const userId = req.params.id;
