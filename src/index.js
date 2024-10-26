@@ -1,5 +1,6 @@
 // Várivel express importando modulo express
 const express = require("express");
+//importando modulo cors
 const cors = require("cors");
 const testConnect = require('./db/testConnect');
 
