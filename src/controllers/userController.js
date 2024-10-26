@@ -1,10 +1,10 @@
-const connect = require("../db/connect");
+const connect = require("../db/connect"); //Fazendo a conexão com banco
 
-module.exports = class userController {
+module.exports = class userController { //improtando a classe userController
   static async createUser(req, res) {
-    const { cpf, email, senha, nome } = req.body;
+    const { cpf, email, senha, nome_completo } = req.body; //o que deve ter na requisição
 
-    if (!cpf || !email || !senha || !nome) {
+    if (!cpf || !email || !senha || !nome_completo) {
       //Verifica se todos os campos estão preenchidos
       return res
         .status(400)
@@ -22,18 +22,19 @@ module.exports = class userController {
       return res.status(400).json({ error: "Email inválido, não docente" });
     } else {
       // Construção da query INSERT
-      const query = `INSERT INTO usuario (cpf, senha, email, nome) VALUES(
+      // valores que deve, estar na query de usuario
+      const query = `INSERT INTO usuario (cpf, senha, email, nome_completo) VALUES(
     '${cpf}',
     '${senha}',
     '${email}',
-    '${nome}')`;
+    '${nome_completo}')`;
       // Executando a query criada
-      try {
+      try { //Permite que você teste um bloco de código que pode gerar um erro, sem interromper a execução do programa
         connect.query(query, function (err) {
           if (err) {
-            console.log(err);
-            console.log(err.code);
-            if (err.code === "ER_DUP_ENTRY") {
+            console.log(err); //imprime o erro
+            console.log(err.code); //imprime o erro do código
+            if (err.code === "ER_DUP_ENTRY") { //erro de duplicidade na chave primária do banco
               return res
                 .status(400)
                 .json({ error: "O Email ja está vinculado a outro usuário" });
@@ -42,13 +43,13 @@ module.exports = class userController {
                 .status(500)
                 .json({ error: "Erro interno do servidor" });
             }
-          } else {
+          } else { // se não houve um erro, o usuário será cadastrado
             return res
               .status(201)
               .json({ message: "Usuário cadastrado com sucesso" });
           }
         });
-      } catch (error) {
+      } catch (error) { //captura e faz o tratamento dos erros que aconteceram 
         console.error(error);
         res.status(500).json({ error: "Erro interno do servidor" });
       }
@@ -58,12 +59,13 @@ module.exports = class userController {
   static async loginUser(req, res) {
     const { senha, email } = req.body;
 
+    //verifica se todos os campos foram preenchidos
     if (!senha || !email) {
       return res
         .status(400)
         .json({ error: "Todos os campos devem ser preenchidos" });
-    } else {
-      const query = `SELECT * FROM usuario WHERE email = '${email}'`;
+    } else { //se os campos foram preenchidos ele procura no banco o registro do usuário
+      const query = `SELECT * FROM usuario WHERE email = '${email}'`; //vai buscar o usuário pelo email
       try {
         connect.query(query, function (err, results) {
           if (err) {
@@ -71,19 +73,19 @@ module.exports = class userController {
             return res.status(500).json({ error: "Erro interno no Servidor" });
           }
 
-          if (results.length === 0) {
+          if (results.length === 0) { //verifica se existe algum usuário cadastrado com aquele email
             return res.status(404).json({ error: "Usuário não entrado" });
           }
 
-          const usuario = results[0];
+          const usuario = results[0]; //verifica se o usuário é igual a zero
 
-          if (usuario.senha === senha) {
-            return res.status(200).json({ message: "Login bem sucedido" });
+          if (usuario.senha === senha) { //verifica se a senha está correta
+            return res.status(200).json({ message: "Login bem sucedido" }); //se a senha estiver correta
           } else {
             return res.status(401).json({ error: "Senha incorreta" });
           }
         });
-      } catch (error) {
+      } catch (error) { //captura o erro e mostra ao cliente 
         console.error("Erro ao executar consulta:", error);
         return res.status(500).json({ error: "Erro interno do Servidor" });
       }
@@ -102,7 +104,7 @@ module.exports = class userController {
           .status(200)
           .json({ message: "Lista de Usuários", users: results });
       });
-    } catch (error) {
+    } catch (error) { //captura o erro e mostra ao cliente 
       console.error("Erro ao executar consulta:", error);
       return res.status(500).json({ error: "Erro interno do Servidor" });
     }
@@ -111,16 +113,16 @@ module.exports = class userController {
   //Vai atualizar os dados
   static async updateUser(req, res) {
     // Desestrutura e recupera os dados enviados via corpo da requisição
-    const { id, cpf, email, senha, nome } = req.body;
+    const { id, cpf, email, senha, nome_completo } = req.body;
 
     // Validar se todos os campos foram preenchidos
-    if (!id || !cpf || !email || !senha || !nome) {
+    if (!id || !cpf || !email || !senha || !nome_completo) {
       return res
         .status(400)
         .json({ error: "Todos os campos devem ser preenchidos" });
     }
-    const query = `UPDATE usuario SET cpf=?, email=?, senha=?, nome=? WHERE id_usuario = ?`;
-    const values = [cpf, email, senha, nome, id];
+    const query = `UPDATE usuario SET cpf=?, email=?, senha=?, nome_completo=? WHERE id_usuario = ?`;
+    const values = [cpf, email, senha, nome_completo, id];
 
     try {
       connect.query(query, values, function (err, results) {
