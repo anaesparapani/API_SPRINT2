@@ -10,12 +10,12 @@ class AppController {
     this.express = express(); //Cria uma nova instância do Express dentro da classe
     this.middlewares(); //Chama o método middlewares para configurar os middlewares
     this.routes(); //Chama o método routes para definir as rotas da API
-    testConnect();
+    testConnect(); //Chama o método para fazer a conexão com o banco
   }
   middlewares() {
     //Permite que a aplicação receba dados no formato JSON nas requisições
     this.express.use(express.json());
-    this.express.use(cors());
+    this.express.use(cors()); //permite a utilização do método cors
   }
   routes() {
     // Define as rotas da API
